@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Grade Analyzer</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <header>
+    <h1>Student Grade Analyzer</h1>
+    <div class="muted">Simple Haskell web UI for your semester project</div>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card">
+        <h2>Add Grade Record</h2>
+        <input id="studentId" type="number" placeholder="Student ID" />
+        <input id="studentName" type="text" placeholder="Student name" />
+        <select id="subject">
+          <option>Programming</option>
+          <option>Mathematics</option>
+          <option>Algorithms</option>
+          <option>Databases</option>
+        </select>
+        <input id="grade" type="number" step="0.1" placeholder="Grade" />
+        <button onclick="addRecord()">Add Record</button>
+        <div id="message" class="muted"></div>
+      </div>
+
+      <div class="card">
+        <h2>Filter by Subject</h2>
+        <select id="subjectFilter">
+          <option>Programming</option>
+          <option>Mathematics</option>
+          <option>Algorithms</option>
+          <option>Databases</option>
+        </select>
+        <button onclick="filterBySubject()">Show Subject Records</button>
+        <button onclick="loadPassing()">Show Passing Students</button>
+        <button onclick="loadFailing()">Show Failing Students</button>
+        <button onclick="loadAll()">Show All Records</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Class Report</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section>
+      <div class="row-actions">
+        <button onclick="loadAll()">Refresh Records</button>
+        <button onclick="loadCategories()">Show Grade Categories</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Subject</th>
+            <th>Grade</th>
+            <th>Extra</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/js/report.js"></script>
+  <script src="/js/records.js"></script>
+  <script src="/js/filters.js"></script>
+</body>
+</html>
