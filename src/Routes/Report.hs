@@ -3,10 +3,10 @@
 module Routes.Report (mountReportRoutes) where
 
 import Analyzer (categorizeGrade)
-import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (Value, object, (.=))
-import Data.IORef (IORef, readIORef)
+import Data.IORef (IORef)
 import Report (generateClassReport)
+import Routes.Common (liftAndRead)
 import Types (GradeRecord (..), Student (..))
 import Web.Scotty
 
@@ -21,9 +21,6 @@ mountReportRoutes recordsRef = do
   get "/api/categories" $ do
     records <- liftAndRead recordsRef
     json (map categoryRow records)
-
-liftAndRead :: IORef [GradeRecord] -> ActionM [GradeRecord]
-liftAndRead = liftIO . readIORef
 
 categoryRow :: GradeRecord -> Value
 categoryRow record =

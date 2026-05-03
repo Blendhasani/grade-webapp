@@ -6,7 +6,7 @@
   'use strict';
 
   var CONFIG = {
-    tbodyId: 'grades-tbody',
+    tbodyId: 'tableBody',
     tableWrapId: 'grades-table-wrap',
     emptyId: 'grades-empty',
     errorId: 'grades-error',
@@ -32,12 +32,6 @@
     rows: [],
   };
 
-  function esc(s) {
-    var d = document.createElement('div');
-    d.textContent = s == null ? '' : String(s);
-    return d.innerHTML;
-  }
-
   function studentName(row) {
     var st = row.recordStudent || row.student || {};
     return st.studentName != null ? st.studentName : st.name != null ? st.name : '—';
@@ -48,9 +42,48 @@
     return typeof subj === 'string' ? subj : subj != null ? String(subj) : '—';
   }
 
-  function gradeCell(row) {
-    var g = row.recordGrade != null ? row.recordGrade : row.grade;
-    return g != null ? String(g) : '—';
+  /** Numeric grade from API row (matches GradeRecord JSON). */
+  function gradeNumeric(row) {
+    if (!row || typeof row !== 'object') return null;
+    var g =
+      row.recordGrade !== undefined && row.recordGrade !== null
+        ? row.recordGrade
+        : row.grade !== undefined && row.grade !== null
+          ? row.grade
+          : null;
+    if (g === null || g === undefined) return null;
+    var n = typeof g === 'number' ? g : Number(String(g).trim());
+    return typeof n === 'number' && isFinite(n) ? n : null;
+  }
+
+  function formatGradeCell(row) {
+    var n = gradeNumeric(row);
+    return n == null ? '—' : n.toFixed(2);
+  }
+
+  /** Same thresholds as Analyzer.categorizeGrade in src/Analyzer.hs */
+  function categoryFromGrade(n) {
+    if (n == null) return '—';
+    var x = typeof n === 'number' ? n : Number(String(n).trim());
+    if (typeof x !== 'number' || !isFinite(x)) return '—';
+    if (x >= 90) return 'Excellent';
+    if (x >= 75) return 'Good';
+    if (x >= 50) return 'Satisfactory';
+    return 'Poor';
+  }
+
+  /** Prefer @category@ from API (see Routes.JsonRows); fallback for old responses. */
+  function categoryLabel(row) {
+    if (row && row.category != null && String(row.category).trim() !== '') {
+      return String(row.category);
+    }
+    return categoryFromGrade(gradeNumeric(row));
+  }
+
+  function appendTextCell(tr, text) {
+    var td = document.createElement('td');
+    td.textContent = text == null ? '' : String(text);
+    tr.appendChild(td);
   }
 
   function setVisible(el, on) {
@@ -165,14 +198,10 @@
     tbody.innerHTML = '';
     state.rows.forEach(function (row) {
       var tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td>' +
-        esc(studentName(row)) +
-        '</td><td>' +
-        esc(subjectCell(row)) +
-        '</td><td>' +
-        esc(gradeCell(row)) +
-        '</td>';
+      appendTextCell(tr, studentName(row));
+      appendTextCell(tr, subjectCell(row));
+      appendTextCell(tr, formatGradeCell(row));
+      appendTextCell(tr, categoryLabel(row));
       tbody.appendChild(tr);
     });
   }
@@ -262,6 +291,29 @@
     }
 
     window.addEventListener('records:refresh', fetchDataset);
+
+    window.loadAll = function () {
+      state.mode = 'all';
+      setActiveFilterButtons();
+      fetchDataset();
+    };
+    window.loadPassing = function () {
+      state.mode = 'passing';
+      setActiveFilterButtons();
+      fetchDataset();
+    };
+    window.loadFailing = function () {
+      state.mode = 'failing';
+      setActiveFilterButtons();
+      fetchDataset();
+    };
+    window.filterBySubject = function () {
+      var sel = document.getElementById('subjectFilter');
+      state.subjectName = sel ? String(sel.value || '').trim() : '';
+      state.mode = 'subject';
+      setActiveFilterButtons();
+      fetchDataset();
+    };
   }
 
   if (document.readyState === 'loading') {

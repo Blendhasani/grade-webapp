@@ -11,6 +11,7 @@ import Network.HTTP.Types.Status (status400)
 import Web.Scotty
 import Analyzer (addGradeRecord)
 import Routes.Common (liftAndRead)
+import Routes.JsonRows (gradeRecordRow)
 import Types (GradeRecord (..), Student (..))
 
 -- | Reject structurally valid JSON that is not acceptable as a new record.
@@ -31,12 +32,12 @@ mountRecordsRoutes :: IORef [GradeRecord] -> ScottyM ()
 mountRecordsRoutes recordsRef = do
   get "/api/records" $ do
     records <- liftAndRead recordsRef
-    json records
+    json (map gradeRecordRow records)
 
   post "/api/records" $ do
     maybeRecord <-
       (Right <$> jsonData)
-        `rescue` (\(_ :: SomeException) -> return (Left "Invalid JSON body" :: Either String GradeRecord))
+        `catch` (\(_ :: SomeException) -> return (Left "Invalid JSON body" :: Either String GradeRecord))
     case maybeRecord of
       Left errMsg -> do
         status status400
@@ -50,4 +51,4 @@ mountRecordsRoutes recordsRef = do
             records <- liftAndRead recordsRef
             let updated = addGradeRecord newRecord records
             liftIO $ writeIORef recordsRef updated
-            json newRecord
+            json (gradeRecordRow newRecord)
